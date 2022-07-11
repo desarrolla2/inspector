@@ -7,12 +7,15 @@ use App\Service\DateService;
 use DateTime;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class AbstractRender
 {
-    public function __construct(protected DateService $dateService)
+    public function __construct(protected DateService $dateService, protected ParameterBagInterface $parameterBag)
     {
     }
+
+    abstract protected function renderHeader(OutputInterface $output);
 
     protected function filter(array $commits, DateTime $from, DateTime $to): array
     {
@@ -34,11 +37,14 @@ abstract class AbstractRender
 
     protected function render(OutputInterface $output, array $headers, array $rows): void
     {
+        $this->renderHeader($output);
         $table = new Table($output);
         $table
             ->setHeaders($headers)
             ->setRows($rows);
         $table->render();
+
+        $output->writeln(['']);
     }
 
     protected function addRow(array $commits, DateTime $startOfDay, DateTime $endOfDay, array $users, array $rows): array

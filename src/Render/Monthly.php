@@ -7,9 +7,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Monthly extends AbstractRender
 {
+    protected function renderHeader(OutputInterface $output)
+    {
+        $output->writeln('<info>Montly</info>');
+    }
     public function execute(OutputInterface $output, array $commits)
     {
-        $current = $this->dateService->getStartOfMonth((new  DateTime())->modify('-6 months'));
+        $current = $this->dateService->getStartOfMonth(
+            (new  DateTime())->modify(sprintf('-%d months', $this->parameterBag->get('app_months_to_show')))
+        );
         $commits = $this->filter($commits, $current, new DateTime());
         $headers = ['user'];
         $users = $this->getUsers($commits);
@@ -19,11 +25,15 @@ class Monthly extends AbstractRender
         }
         $now = new DateTime();
         while ($current <= $now) {
-            $headers[] = $current->format('d/m');
-            $startOfWeek = $this->dateService->getStartOfMonth($current);
-            $endOfWeek = $this->dateService->getEndOfMonth($current);
+            $headers[] = $current->format('M');
+            $rows = $this->addRow(
+                $commits,
+                $this->dateService->getStartOfMonth($current),
+                $this->dateService->getEndOfMonth($current),
+                $users,
+                $rows
+            );
             $current->modify('+1 month');
-            $rows = $this->addRow($commits, $startOfWeek, $endOfWeek, $users, $rows);
         }
 
 

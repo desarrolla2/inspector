@@ -7,9 +7,16 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Weekly extends AbstractRender
 {
+    protected function renderHeader(OutputInterface $output)
+    {
+        $output->writeln('<info>Weekly</info>');
+    }
+
     public function execute(OutputInterface $output, array $commits)
     {
-        $current = $this->dateService->getStartOfWeek((new  DateTime())->modify('-10 weeks'));
+        $current = $this->dateService->getStartOfWeek(
+            (new  DateTime())->modify(sprintf('-%d weeks', $this->parameterBag->get('app_weeks_to_show')))
+        );
         $commits = $this->filter($commits, $current, new DateTime());
         $headers = ['user'];
         $users = $this->getUsers($commits);
@@ -20,12 +27,15 @@ class Weekly extends AbstractRender
         $now = new DateTime();
         while ($current <= $now) {
             $headers[] = $current->format('d/m');
-            $startOfWeek = $this->dateService->getStartOfWeek($current);
-            $endOfWeek = $this->dateService->getEndOfWeek($current);
+            $rows = $this->addRow(
+                $commits,
+                $this->dateService->getStartOfWeek($current),
+                $this->dateService->getEndOfWeek($current),
+                $users,
+                $rows
+            );
             $current->modify('+7 days');
-            $rows = $this->addRow($commits, $startOfWeek, $endOfWeek, $users, $rows);
         }
-
 
         $this->render($output, $headers, $rows);
     }

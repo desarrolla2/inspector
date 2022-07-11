@@ -6,6 +6,9 @@
 parameters:
 
     app_target_directory: '%env(APP_TARGET_DIRECTORY)%'
+    app_days_to_show: '%env(APP_DAYS_TO_SHOW)%'
+    app_weeks_to_show: '%env(APP_WEEKS_TO_SHOW)%'
+    app_months_to_show: '%env(APP_MONTHS_TO_SHOW)%'
 
 services:
     # default configuration for services in *this* file
