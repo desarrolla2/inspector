@@ -36,6 +36,8 @@ class Weekly extends AbstractRender
             );
             $current->modify('+7 days');
         }
+        $headers[] = 'Avg';
+        $rows = $this->addAverage($rows, false);
 
         $this->render($output, $headers, $rows);
     }

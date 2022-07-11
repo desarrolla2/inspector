@@ -30,7 +30,7 @@ class Daily extends AbstractRender
         }
         $now = new DateTime();
         while ($current <= $now) {
-            $headers[] = $current->format('D d');
+            $headers[] = sprintf('%s %s', substr($current->format('D'), 0, 1), $current->format('d'));
             $rows = $this->addRow(
                 $commits,
                 $this->dateService->getStartOfDay($current),
@@ -40,6 +40,8 @@ class Daily extends AbstractRender
             );
             $current = $this->dateService->getNextBusinessDay($current);
         }
+        $headers[] = 'Avg';
+        $rows = $this->addAverage($rows);
 
         $this->render($output, $headers, $rows);
     }

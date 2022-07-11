@@ -9,9 +9,7 @@ use App\Render\Weekly;
 use DateTime;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -19,26 +17,42 @@ use Symfony\Component\Process\Process;
 
 #[AsCommand(
     name: 'app:run',
-    description: 'Add a short description for your command',
+    description: 'Show commits per user in a weekly, monthly and daily view.',
 )]
 class RunCommand extends Command
 {
-    public function __construct( private ParameterBagInterface $parameterBag, private Daily $daily, private Weekly $weekly, private Monthly $monthly)
+    public function __construct(private ParameterBagInterface $parameterBag, private Daily $daily, private Weekly $weekly, private Monthly $monthly)
     {
         return parent::__construct(null);
     }
 
-    protected function configure(): void
+    protected function createCommits(array $lines): array
     {
-        $this
-            ->addArgument('arg1', InputArgument::OPTIONAL, 'Argument description')
-            ->addOption('option1', null, InputOption::VALUE_NONE, 'Option description');
+        $total = count($lines) - 6;
+        $commits = [];
+        for ($line = 0; $line < $total; $line += 6) {
+            while (!str_starts_with($lines[$line], 'hash')) {
+                $line++;
+            }
+            if (str_contains($lines[$line + 4], '[cs]')) {
+                continue;
+            }
+            $commits[] = new Commit(
+                str_replace('hash:', '', $lines[$line]),
+                $this->normalizeEmail(str_replace('email:', '', $lines[$line + 1])),
+                trim($lines[$line + 4]),
+                $this->getDateFromTimestamp((int) str_replace('timestamp:', '', $lines[$line + 2])),
+                (int) trim(str_replace('ins', '', $this->findFirstByRegex($lines[$line + 5], '#[\d]+ ins#')))
+            );
+        }
+
+        return $commits;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $process = new Process(
-            ['/usr/bin/git', 'log', '-5000', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges',],
+            ['/usr/bin/git', 'log', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges',],
             $this->parameterBag->get('app_target_directory')
         );
         $process->run();
@@ -75,24 +89,13 @@ class RunCommand extends Command
         return $email;
     }
 
-    protected function createCommits(array $lines): array
+    private function findFirstByRegex(string $string, string $regex)
     {
-        $total = count($lines) - 6;
-        $commits = [];
-        for ($line = 0; $line < $total; $line += 6) {
-            while (!str_starts_with($lines[$line], 'hash')) {
-                $line++;
-            }
-            $commits[] = new Commit(
-                str_replace('hash:', '', $lines[$line]),
-                $this->normalizeEmail(str_replace('email:', '', $lines[$line + 1])),
-                trim($lines[$line + 4]),
-                $this->getDateFromTimestamp((int) str_replace('timestamp:', '', $lines[$line + 2])),
-                (int) trim(str_replace('ins', '', $this->findFirstByRegex($lines[$line + 5], '#[\d]+ ins#')))
-            );
+        if (preg_match($regex, $string, $match)) {
+            return $match[0];
         }
 
-        return $commits;
+        return false;
     }
 
     private function getDateFromTimestamp(int $timestamp): DateTime
@@ -101,15 +104,6 @@ class RunCommand extends Command
         $date->setTimestamp($timestamp);
 
         return $date;
-    }
-
-    private function findFirstByRegex(string $string, string $regex)
-    {
-        if (preg_match($regex, $string, $match)) {
-            return $match[0];
-        }
-
-        return false;
     }
 
     private function getLines(string $body): array

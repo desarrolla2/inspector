@@ -70,7 +70,7 @@ class DateService
             $date->modify('-6 days');
         }
         if (1 == $date->format('w')) {
-            return $date;
+            return $this->getStartOfDay($date);
         }
         $date->modify(sprintf('-%d days', ($date->format('w') - 1)));
 

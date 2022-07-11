@@ -35,6 +35,8 @@ class Monthly extends AbstractRender
             );
             $current->modify('+1 month');
         }
+        $headers[] = 'Avg';
+        $rows = $this->addAverage($rows, false);
 
 
         $this->render($output, $headers, $rows);
