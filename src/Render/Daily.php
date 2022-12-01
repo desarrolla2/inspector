@@ -7,12 +7,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Daily extends AbstractRender
 {
-    protected function renderHeader(OutputInterface $output)
-    {
-        $output->writeln('<info>Daily</info>');
-    }
-
-    public function execute(OutputInterface $output, array $commits)
+    public function execute(OutputInterface $output, array $commits):void
     {
         $current = $this->dateService->getStartOfDay(
             $this->dateService->getNextBusinessDay(
@@ -44,5 +39,15 @@ class Daily extends AbstractRender
         $rows = $this->addAverage($rows);
 
         $this->render($output, $headers, $rows);
+    }
+
+    protected function renderHeader(OutputInterface $output)
+    {
+        $output->writeln('<info>Daily</info>');
+    }
+
+    public static function getDefaultPriority(): int
+    {
+        return 10;
     }
 }

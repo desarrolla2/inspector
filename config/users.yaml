@@ -1,0 +1,5 @@
+users:
+    - { name: 'Alvaro', emails: [ acebrian@strongholdam.com, alvaro@devtia.com ] }
+    - { name: 'Antonio', emails: [ amontealegre@strongholdam.com, 100672060+AntonioMontealegre@users.noreply.github.com ] }
+    - { name: 'Daniel', emails: [ dgonzalez@strongholdam.com, daniel@devtia.com, daniel@desarrolla2.com ] }
+    - { name: 'Sergio', emails: [ smartin@strongholdam.com, sergyzen@gmail.com ] }

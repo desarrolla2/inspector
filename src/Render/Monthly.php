@@ -7,11 +7,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Monthly extends AbstractRender
 {
-    protected function renderHeader(OutputInterface $output)
-    {
-        $output->writeln('<info>Montly</info>');
-    }
-    public function execute(OutputInterface $output, array $commits)
+    public function execute(OutputInterface $output, array $commits):void
     {
         $current = $this->dateService->getStartOfMonth(
             (new  DateTime())->modify(sprintf('-%d months', $this->parameterBag->get('app_months_to_show')))
@@ -40,5 +36,15 @@ class Monthly extends AbstractRender
 
 
         $this->render($output, $headers, $rows);
+    }
+
+    public static function getDefaultPriority(): int
+    {
+        return 30;
+    }
+
+    protected function renderHeader(OutputInterface $output)
+    {
+        $output->writeln('<info>Monthly</info>');
     }
 }
