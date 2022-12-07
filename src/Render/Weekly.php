@@ -7,12 +7,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Weekly extends AbstractRender
 {
-    protected function renderHeader(OutputInterface $output)
+    public static function getDefaultPriority(): int
     {
-        $output->writeln('<info>Weekly</info>');
+        return 75;
     }
 
-    public function execute(OutputInterface $output, array $commits)
+    public function execute(OutputInterface $output, array $commits): void
     {
         $current = $this->dateService->getStartOfWeek(
             (new  DateTime())->modify(sprintf('-%d weeks', $this->parameterBag->get('app_weeks_to_show')))
@@ -40,5 +40,10 @@ class Weekly extends AbstractRender
         $rows = $this->addAverage($rows, false);
 
         $this->render($output, $headers, $rows);
+    }
+
+    protected function renderHeader(OutputInterface $output)
+    {
+        $output->writeln('<info>Weekly</info>');
     }
 }

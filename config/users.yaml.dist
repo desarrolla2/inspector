@@ -1,0 +1,4 @@
+users:
+    - { name: 'Alice', emails: [ alice@example.com, alice@otherdomain.com ] }
+    - { name: 'Bob', emails: [ bob@example.com ] }
+    - { name: 'Charlie', emails: [ charlie@example.com ] }

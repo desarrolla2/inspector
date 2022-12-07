@@ -3,17 +3,18 @@
 namespace App\Command;
 
 use App\Model\Commit;
-use App\Render\Daily;
-use App\Render\Monthly;
-use App\Render\Weekly;
+use App\Model\Email;
+use App\Model\User;
+use App\Render\Render;
 use DateTime;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand(
     name: 'app:run',
@@ -21,12 +22,41 @@ use Symfony\Component\Process\Process;
 )]
 class RunCommand extends Command
 {
-    public function __construct(private ParameterBagInterface $parameterBag, private Daily $daily, private Weekly $weekly, private Monthly $monthly)
+    private array $users;
+
+    public function __construct(private Render $render)
     {
-        return parent::__construct(null);
+        return parent::__construct();
     }
 
-    protected function createCommits(array $lines): array
+    protected function configure(): void
+    {
+        $this
+            ->addArgument('target', InputArgument::REQUIRED, 'Target directory to analyze');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $this->calculateUsers();
+
+        $process = new Process(
+            ['/usr/bin/git', 'log', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges',],
+            $input->getArgument('target')
+        );
+        $process->run();
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $lines = $this->getLines($process->getOutput());
+        $commits = $this->calculateCommits($lines);
+
+        $this->render->execute($output, $commits);
+
+        return Command::SUCCESS;
+    }
+
+    private function calculateCommits(array $lines): array
     {
         $total = count($lines) - 6;
         $commits = [];
@@ -39,7 +69,7 @@ class RunCommand extends Command
             }
             $commits[] = new Commit(
                 str_replace('hash:', '', $lines[$line]),
-                $this->normalizeEmail(str_replace('email:', '', $lines[$line + 1])),
+                $this->getUserName(str_replace('email:', '', $lines[$line + 1])),
                 trim($lines[$line + 4]),
                 $this->getDateFromTimestamp((int) str_replace('timestamp:', '', $lines[$line + 2])),
                 (int) trim(str_replace('ins', '', $this->findFirstByRegex($lines[$line + 5], '#[\d]+ ins#')))
@@ -49,44 +79,16 @@ class RunCommand extends Command
         return $commits;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    private function calculateUsers(): void
     {
-        $process = new Process(
-            ['/usr/bin/git', 'log', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges',],
-            $this->parameterBag->get('app_target_directory')
-        );
-        $process->run();
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
+        $rows = Yaml::parseFile('config/users.yaml');
+        foreach ($rows['users'] as $row) {
+            $emails = [];
+            foreach ($row['emails'] as $emailAsString) {
+                $emails[] = new Email($emailAsString);
+            }
+            $this->users[] = new User($row['name'], $emails);
         }
-        $lines = $this->getLines($process->getOutput());
-
-        $commits = $this->createCommits($lines);
-
-        $this->daily->execute($output, $commits);
-        $this->weekly->execute($output, $commits);
-        $this->monthly->execute($output, $commits);
-
-        return Command::SUCCESS;
-    }
-
-    protected function normalizeEmail(string $email): string
-    {
-        if (in_array($email, ['dgonzalez@strongholdam.com', 'daniel@devtia.com', 'daniel@desarrolla2.com'])) {
-            return 'dgonzalez@strongholdam.com';
-        }
-        if (in_array($email, ['acebrian@strongholdam.com', 'alvaro@devtia.com'])) {
-            return 'acebrian@strongholdam.com';
-        }
-        if (in_array($email, ['amontealegre@strongholdam.com', '100672060+AntonioMontealegre@users.noreply.github.com',])) {
-            return 'amontealegre@strongholdam.com';
-        }
-
-        if (in_array($email, ['smartin@strongholdam.com', 'sergyzen@gmail.com',])) {
-            return 'smartin@strongholdam.com';
-        }
-
-        return $email;
     }
 
     private function findFirstByRegex(string $string, string $regex)
@@ -117,5 +119,19 @@ class RunCommand extends Command
         }
 
         return array_values($lines);
+    }
+
+    private function getUserName(string $emailAsString): string
+    {
+        /** @var User $user */
+        foreach ($this->users as $user) {
+            foreach ($user->getEmails() as $email) {
+                if ($email->getEmail() == $emailAsString) {
+                    return $user->getName();
+                }
+            }
+        }
+
+        return $emailAsString;
     }
 }

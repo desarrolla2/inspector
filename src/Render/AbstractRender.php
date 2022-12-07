@@ -17,7 +17,62 @@ abstract class AbstractRender
     {
     }
 
-    abstract protected function renderHeader(OutputInterface $output);
+    abstract public static function getDefaultPriority(): int;
+
+    abstract public function execute(OutputInterface $output, array $commits): void;
+
+    protected function addAverage(array $rows, bool $countZeros = true): array
+    {
+        foreach ($rows as $idx => $row) {
+            $rows[$idx][] = $this->calculateAverage($row, $countZeros);
+        }
+
+        return $rows;
+    }
+
+    protected function addRow(array $commits, DateTime $startOfDay, DateTime $endOfDay, array $users, array $rows): array
+    {
+        $currentCommits = $this->filter($commits, $startOfDay, $endOfDay);
+        foreach ($users as $user) {
+            $rows[$user][] =
+                array_reduce($currentCommits, function (int $carry, Commit $commit) use ($user) {
+                    if ($commit->getUser() != $user) {
+                        return $carry;
+                    }
+
+                    return $carry + $commit->getInserts();
+                }, 0);
+        }
+
+        return $rows;
+    }
+
+    protected function calculateAverage(mixed $row, bool $countZeros = true): float
+    {
+        $count = count($row) - 1;
+        if (!$countZeros) {
+            $count = array_reduce($row, function (int $carry, $item) {
+                if (!is_numeric($item)) {
+                    return $carry;
+                }
+                if ($item <= 0) {
+                    return $carry;
+                }
+
+                return $carry + 1;
+            }, 0);
+        }
+
+        return round(
+            array_reduce($row, function (int $carry, $item) {
+                if (!is_numeric($item)) {
+                    return $carry;
+                }
+
+                return $carry + $item;
+            }, 0) / $count
+        );
+    }
 
     protected function filter(array $commits, DateTime $from, DateTime $to): array
     {
@@ -55,61 +110,9 @@ abstract class AbstractRender
         $output->writeln(['']);
     }
 
-    protected function addRow(array $commits, DateTime $startOfDay, DateTime $endOfDay, array $users, array $rows): array
-    {
-        $currentCommits = $this->filter($commits, $startOfDay, $endOfDay);
-        foreach ($users as $user) {
-            $rows[$user][] =
-                array_reduce($currentCommits, function (int $carry, Commit $commit) use ($user) {
-                    if ($commit->getUser() != $user) {
-                        return $carry;
-                    }
+    abstract protected function renderHeader(OutputInterface $output);
 
-                    return $carry + $commit->getInserts();
-                }, 0);
-        }
-
-        return $rows;
-    }
-
-    protected function addAverage(array $rows, bool $countZeros = true): array
-    {
-        foreach ($rows as $idx => $row) {
-            $rows[$idx][] = $this->calculateAverage($row, $countZeros);
-        }
-
-        return $rows;
-    }
-
-    protected function calculateAverage(mixed $row, bool $countZeros = true)
-    {
-        $count = count($row) - 1;
-        if (!$countZeros) {
-            $count = array_reduce($row, function (int $carry, $item) {
-                if (!is_numeric($item)) {
-                    return $carry;
-                }
-                if ($item <= 0) {
-                    return $carry;
-                }
-
-                return $carry + 1;
-            }, 0);
-        }
-
-        return round(
-            array_reduce($row, function (int $carry, $item) {
-                if (!is_numeric($item)) {
-                    return $carry;
-                }
-
-                return $carry + $item;
-            }, 0) / $count,
-            0
-        );
-    }
-
-    private function createCell(mixed $cell)
+    private function createCell(mixed $cell): TableCell
     {
         if (is_numeric($cell)) {
             return new TableCell(number_format($cell, 0), ['style' => new TableCellStyle(['align' => 'right',])]);

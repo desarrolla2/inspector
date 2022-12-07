@@ -2,10 +2,17 @@
 
 namespace App\Model;
 
+use DateTime;
+
 class Commit
 {
-    public function __construct(private string $hash, private string $user, private string $subject, private \DateTime $date, private int $inserts)
+    public function __construct(private string $hash, private string $user, private string $subject, private DateTime $date, private int $inserts)
     {
+    }
+
+    public function getDate(): DateTime
+    {
+        return $this->date;
     }
 
     public function getHash(): string
@@ -13,9 +20,9 @@ class Commit
         return $this->hash;
     }
 
-    public function getUser(): string
+    public function getInserts(): int
     {
-        return $this->user;
+        return $this->inserts;
     }
 
     public function getSubject(): string
@@ -23,13 +30,8 @@ class Commit
         return $this->subject;
     }
 
-    public function getDate(): \DateTime
+    public function getUser(): string
     {
-        return $this->date;
-    }
-
-    public function getInserts(): int
-    {
-        return $this->inserts;
+        return $this->user;
     }
 }

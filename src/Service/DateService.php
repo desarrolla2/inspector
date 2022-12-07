@@ -7,28 +7,12 @@ use DateTime;
 
 class DateService
 {
-    public function getNextBusinessDay(DateTime $date): DateTime
+    public function getEndOfDay(DateTime $date): DateTime
     {
         $date = clone $date;
-        $date->modify('+1 day');
-        while (!$this->isBusinessDay($date)) {
-            $date->modify('+1 day');
-        }
+        $date->setTime(23, 59, 39);
 
         return $date;
-    }
-
-    public function isBusinessDay(DateTime $date): bool
-    {
-        return $date->format('N') < 6;
-    }
-
-    public function getStartOfMonth(DateTime $date): DateTime
-    {
-        $date = clone $date;
-        $date->modify('first day of this month');
-
-        return $this->getStartOfDay($date);
     }
 
     public function getEndOfMonth(DateTime $date): DateTime
@@ -39,10 +23,21 @@ class DateService
         return $this->getEndOfDay($date);
     }
 
-    public function getEndOfDay(DateTime $date): DateTime
+    public function getEndOfWeek(DateTime $date): DateTime
+    {
+        $date = $this->getStartOfWeek($date);
+        $date->modify('+6 days');
+
+        return $this->getEndOfDay($date);
+    }
+
+    public function getNextBusinessDay(DateTime $date): DateTime
     {
         $date = clone $date;
-        $date->setTime(23, 59, 39);
+        $date->modify('+1 day');
+        while (!$this->isBusinessDay($date)) {
+            $date->modify('+1 day');
+        }
 
         return $date;
     }
@@ -55,12 +50,12 @@ class DateService
         return $date;
     }
 
-    public function getEndOfWeek(DateTime $date): DateTime
+    public function getStartOfMonth(DateTime $date): DateTime
     {
-        $date = $this->getStartOfWeek($date);
-        $date->modify('+6 days');
+        $date = clone $date;
+        $date->modify('first day of this month');
 
-        return $this->getEndOfDay($date);
+        return $this->getStartOfDay($date);
     }
 
     public function getStartOfWeek(DateTime $date): DateTime
@@ -75,5 +70,10 @@ class DateService
         $date->modify(sprintf('-%d days', ($date->format('w') - 1)));
 
         return $this->getStartOfDay($date);
+    }
+
+    public function isBusinessDay(DateTime $date): bool
+    {
+        return $date->format('N') < 6;
     }
 }
