@@ -22,7 +22,7 @@ class Monthly extends AbstractRender
         $users = $this->getUsers($commits);
         $rows = [];
         foreach ($users as $user) {
-            $rows[$user] = [$user];
+            $rows[$user] = ['user' => $user];
         }
         $now = new DateTime();
         while ($current <= $now) {

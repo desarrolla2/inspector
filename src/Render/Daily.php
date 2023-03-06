@@ -26,7 +26,7 @@ class Daily extends AbstractRender
         $users = $this->getUsers($commits);
         $rows = [];
         foreach ($users as $user) {
-            $rows[$user] = [$user];
+            $rows[$user] = ['user' => $user];
         }
         $now = new DateTime();
         while ($current <= $now) {
@@ -41,7 +41,7 @@ class Daily extends AbstractRender
             $current = $this->dateService->getNextBusinessDay($current);
         }
         $headers[] = 'Avg';
-        $rows = $this->addAverage($rows);
+        $rows = $this->addAverage($rows, true);
 
         $this->render($output, $headers, $rows);
     }
