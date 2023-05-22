@@ -31,12 +31,23 @@ class DateService
         return $this->getEndOfDay($date);
     }
 
-    public function getNextBusinessDay(DateTime $date): DateTime
+    public function getNextBusinessDate(DateTime $date): DateTime
     {
         $date = clone $date;
         $date->modify('+1 day');
-        while (!$this->isBusinessDay($date)) {
-            $date->modify('+1 day');
+        if (!$this->isBusinessDay($date)) {
+            return $this->getNextBusinessDate($date);
+        }
+
+        return $date;
+    }
+
+    public function getPreviousBusinessDate(DateTime $date): DateTime
+    {
+        $date = clone $date;
+        $date->modify('-1 day');
+        if (!$this->isBusinessDay($date)) {
+            return $this->getPreviousBusinessDate($date);
         }
 
         return $date;

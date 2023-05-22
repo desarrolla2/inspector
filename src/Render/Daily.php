@@ -15,7 +15,7 @@ class Daily extends AbstractRender
     public function execute(OutputInterface $output, array $commits): void
     {
         $current = $this->dateService->getStartOfDay(
-            $this->dateService->getNextBusinessDay(
+            $this->dateService->getNextBusinessDate(
                 (new DateTime())->modify(
                     sprintf('-%d days', $this->parameterBag->get('app_days_to_show'),)
                 )
@@ -30,15 +30,16 @@ class Daily extends AbstractRender
         }
         $now = new DateTime();
         while ($current <= $now) {
+            $previous = $this->dateService->getPreviousBusinessDate($current);
             $headers[] = sprintf('%s %s', substr($current->format('D'), 0, 1), $current->format('d'));
             $rows = $this->addRow(
                 $commits,
-                $this->dateService->getStartOfDay($current),
+                $this->dateService->getEndOfDay($previous),
                 $this->dateService->getEndOfDay($current),
                 $users,
                 $rows
             );
-            $current = $this->dateService->getNextBusinessDay($current);
+            $current = $this->dateService->getNextBusinessDate($current);
         }
         $headers[] = 'Avg';
         $rows = $this->addAverage($rows, true);
