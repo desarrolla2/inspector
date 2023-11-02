@@ -5,17 +5,17 @@ namespace App\Render;
 use DateTime;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Weekly extends AbstractRender
+class Yearly extends AbstractRender
 {
     public static function getDefaultPriority(): int
     {
-        return 90;
+        return 70;
     }
 
     public function execute(OutputInterface $output, array $commits): void
     {
-        $current = $this->dateService->getStartOfWeek(
-            (new  DateTime())->modify(sprintf('-%d weeks', $this->parameterBag->get('app_weeks_to_show')))
+        $current = $this->dateService->getStartOfYear(
+            (new  DateTime())->modify(sprintf('-%d years', $this->parameterBag->get('app_years_to_show')))
         );
         $commits = $this->filter($commits, $current, new DateTime());
         $headers = ['user'];
@@ -26,24 +26,25 @@ class Weekly extends AbstractRender
         }
         $now = new DateTime();
         while ($current <= $now) {
-            $headers[] = $current->format('d/m');
+            $headers[] = $current->format('Y');
             $rows = $this->addRow(
                 $commits,
-                $this->dateService->getStartOfWeek($current),
-                $this->dateService->getEndOfWeek($current),
+                $this->dateService->getStartOfYear($current),
+                $this->dateService->getEndOfYear($current),
                 $users,
                 $rows
             );
-            $current->modify('+7 days');
+            $current->modify('+1 year');
         }
         $headers[] = 'Avg';
         $rows = $this->addAverage($rows, false);
+
 
         $this->render($output, $headers, $rows);
     }
 
     protected function renderHeader(OutputInterface $output): void
     {
-        $output->writeln(sprintf('<info>Weekly</info> (%d)', $this->parameterBag->get('app_weeks_to_show')));
+        $output->writeln(sprintf('<info>Yearly</info> (%d)', $this->parameterBag->get('app_years_to_show')));
     }
 }

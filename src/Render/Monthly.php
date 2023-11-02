@@ -9,7 +9,7 @@ class Monthly extends AbstractRender
 {
     public static function getDefaultPriority(): int
     {
-        return 50;
+        return 80;
     }
 
     public function execute(OutputInterface $output, array $commits): void
@@ -43,8 +43,8 @@ class Monthly extends AbstractRender
         $this->render($output, $headers, $rows);
     }
 
-    protected function renderHeader(OutputInterface $output)
+    protected function renderHeader(OutputInterface $output): void
     {
-        $output->writeln('<info>Monthly</info>');
+        $output->writeln(sprintf('<info>Monthly</info> (%d)', $this->parameterBag->get('app_months_to_show')));
     }
 }

@@ -47,25 +47,6 @@ abstract class AbstractRender
         return $rows;
     }
 
-    private function calculateAverage(mixed $row, bool $countZeros): float
-    {
-        $total = array_reduce($row['dates'], function (int $carry, $item) {
-            return $carry + $item;
-        }, 0);
-        $count = count($row['dates']);
-        if (!$countZeros) {
-            $count = array_reduce($row['dates'], function (int $carry, $item) {
-                if (0 < $item) {
-                    return $carry + 1;
-                }
-
-                return $carry;
-            }, 0);
-        }
-
-        return round($total / $count);
-    }
-
     protected function filter(array $commits, DateTime $from, DateTime $to): array
     {
         return array_filter($commits, function (Commit $commit) use ($from, $to) {
@@ -97,7 +78,26 @@ abstract class AbstractRender
         $output->writeln(['']);
     }
 
-    abstract protected function renderHeader(OutputInterface $output);
+    abstract protected function renderHeader(OutputInterface $output): void;
+
+    private function calculateAverage(mixed $row, bool $countZeros): float
+    {
+        $total = array_reduce($row['dates'], function (int $carry, $item) {
+            return $carry + $item;
+        }, 0);
+        $count = count($row['dates']);
+        if (!$countZeros) {
+            $count = array_reduce($row['dates'], function (int $carry, $item) {
+                if (0 < $item) {
+                    return $carry + 1;
+                }
+
+                return $carry;
+            }, 0);
+        }
+
+        return round($total / $count);
+    }
 
     private function cell(mixed $value): TableCell
     {

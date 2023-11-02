@@ -31,6 +31,13 @@ class DateService
         return $this->getEndOfDay($date);
     }
 
+    public function getEndOfYear(\DateTime $date): \DateTime
+    {
+        $date = (new \DateTime())->setDate($date->format('Y'), 12, 31);
+
+        return $this->getEndOfDay($date);
+    }
+
     public function getNextBusinessDate(DateTime $date): DateTime
     {
         $date = clone $date;
@@ -79,6 +86,13 @@ class DateService
             return $this->getStartOfDay($date);
         }
         $date->modify(sprintf('-%d days', ($date->format('w') - 1)));
+
+        return $this->getStartOfDay($date);
+    }
+
+    public function getStartOfYear(\DateTime $date): \DateTime
+    {
+        $date = (new \DateTime())->setDate($date->format('Y'), 1, 1);
 
         return $this->getStartOfDay($date);
     }

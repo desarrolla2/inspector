@@ -9,7 +9,7 @@ class Daily extends AbstractRender
 {
     public static function getDefaultPriority(): int
     {
-        return 90;
+        return 100;
     }
 
     public function execute(OutputInterface $output, array $commits): void
@@ -47,8 +47,8 @@ class Daily extends AbstractRender
         $this->render($output, $headers, $rows);
     }
 
-    protected function renderHeader(OutputInterface $output)
+    protected function renderHeader(OutputInterface $output): void
     {
-        $output->writeln('<info>Daily</info>');
+        $output->writeln(sprintf('<info>Daily</info> (%d)', $this->parameterBag->get('app_days_to_show')));
     }
 }
