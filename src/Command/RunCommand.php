@@ -40,9 +40,10 @@ class RunCommand extends Command
         $this->calculateUsers();
 
         $process = new Process(
-            ['/usr/bin/git', 'log', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges',],
+            ['/usr/bin/git', 'log', '--pretty=hash:%H%n email:%ae%n timestamp:%at%n date:%as%n subject:%s"', '--shortstat', '--no-merges', '--', ':(exclude)*.lock', ':(exclude)migrations/*'],
             $input->getArgument('target')
         );
+
         $process->run();
         if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
@@ -56,6 +57,7 @@ class RunCommand extends Command
         return Command::SUCCESS;
     }
 
+    /** @return Commit[] */
     private function calculateCommits(array $lines): array
     {
         $total = count($lines) - 6;
@@ -91,7 +93,7 @@ class RunCommand extends Command
         }
     }
 
-    private function findFirstByRegex(string $string, string $regex)
+    private function findFirstByRegex(string $string, string $regex): bool|string
     {
         if (preg_match($regex, $string, $match)) {
             return $match[0];
